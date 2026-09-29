@@ -1,6 +1,6 @@
 # SPEC 01 — MVP jugable de Arkanoid
 
-> **Status:** Aprovado
+> **Status:** Aprobado
 > **Depends on:** (ninguno)
 > **Date:** 2026-09-29
 > **Objective:** Construir una versión mínima jugable de Arkanoid de punta a punta: paleta controlable por mouse y teclado, bola con rebote físico clásico, un único nivel de bloques 10x6, sistema de vidas, puntaje básico y overlays de victoria/derrota con reintento.
@@ -14,8 +14,7 @@
 - Paleta controlada simultáneamente por mouse (posición horizontal) y teclado (flechas izquierda/derecha).
 - Rebote de la bola estilo clásico: en la paleta, el ángulo de salida depende del punto de impacto (extremos = ángulos más cerrados/agudos respecto al borde); en paredes y bloques, reflexión simple (se invierte la componente de velocidad correspondiente).
 - Un único nivel: grilla de bloques de 10 columnas x 6 filas (60 bloques), con colores asignados bloque a bloque (mezclados), usando los 7 colores disponibles en `SPRITES.blocks`.
-- Bloques de un solo golpe: al romperse suman 10 puntos, reproducen la animación de explosión (`EXPLOSION_FRAMES`) y el sonido `assets/sounds/break-sound.mp3`.
-- Sonido `assets/sounds/ball-bounce.mp3` en cada rebote contra pared o paleta.
+- Bloques de un solo golpe: al romperse suman 10 puntos.
 - 3 vidas. Si la bola cae debajo de la paleta, se resta una vida y se reinicia la posición de bola y paleta.
 - HUD simple en el canvas mostrando puntaje y vidas actuales.
 - Puntaje visible durante la partida, sin persistencia (se pierde al recargar el navegador).
@@ -23,6 +22,7 @@
 
 **Out of scope (for future specs):**
 
+- Sonidos (`ball-bounce.mp3`, `break-sound.mp3`).
 - Múltiples niveles o progresión entre niveles.
 - Power-ups.
 - Bloques con más de un golpe de resistencia o bloques indestructibles.
@@ -82,6 +82,7 @@ Convenciones:
 - **Sí:** bloques de un solo golpe con puntaje uniforme (10 pts). Simplifica el MVP y evita definir una tabla de resistencia/puntaje por color.
 - **Sí:** colores asignados por bloque individual, no por fila completa. Pedido explícito del usuario para evitar franjas de un solo color.
 - **Sí:** overlay simple sobre el mismo canvas para victoria/derrota, en vez de pantallas o rutas separadas. Es más simple de implementar y suficiente para un MVP.
+- **No:** sonidos (`ball-bounce.mp3`, `break-sound.mp3`). Decisión explícita del usuario de no implementarlos en este MVP; queda para un spec futuro.
 - **No:** persistencia de puntaje (localStorage). Decisión explícita del usuario de no guardarlo por ahora.
 - **No:** múltiples niveles. Un único nivel fijo de 10x6 es suficiente para un MVP jugable de punta a punta.
 - **No:** bloques con más de un golpe de resistencia o indestructibles. Fuera de alcance del MVP.
@@ -90,11 +91,11 @@ Convenciones:
 
 | Riesgo | Mitigación |
 | --- | --- |
-| Los navegadores bloquean el autoplay de audio hasta la primera interacción del usuario. | Los sonidos solo se disparan por eventos de juego (movimiento, colisión) que ya implican interacción previa del usuario; no se reproduce audio al cargar la página. |
 | Un ángulo de rebote muy agudo en los extremos de la paleta puede generar trayectorias casi horizontales indeseadas. | Al implementar el paso 4, acotar (clamp) el ángulo resultante a un máximo razonable respecto a la vertical. |
 
 ## What is **not** in this spec
 
+- Sonidos (`ball-bounce.mp3`, `break-sound.mp3`).
 - Múltiples niveles o progresión entre niveles.
 - Power-ups.
 - Bloques con resistencia mayor a un golpe o indestructibles.
