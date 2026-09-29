@@ -10,6 +10,35 @@ const state = {
   blocks: [],
 };
 
+const PADDLE_SPEED = 7;
+const keys = { left: false, right: false };
+
+function clampPaddleX( x ) {
+  return Math.max( 0, Math.min( canvas.width - state.paddle.w, x ) );
+}
+
+canvas.addEventListener( 'mousemove', ( e ) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const mouseX = ( e.clientX - rect.left ) * scaleX;
+  state.paddle.x = clampPaddleX( mouseX - state.paddle.w / 2 );
+} );
+
+document.addEventListener( 'keydown', ( e ) => {
+  if ( e.key === 'ArrowLeft' ) keys.left = true;
+  if ( e.key === 'ArrowRight' ) keys.right = true;
+} );
+
+document.addEventListener( 'keyup', ( e ) => {
+  if ( e.key === 'ArrowLeft' ) keys.left = false;
+  if ( e.key === 'ArrowRight' ) keys.right = false;
+} );
+
+function update() {
+  if ( keys.left ) state.paddle.x = clampPaddleX( state.paddle.x - PADDLE_SPEED );
+  if ( keys.right ) state.paddle.x = clampPaddleX( state.paddle.x + PADDLE_SPEED );
+}
+
 function render() {
   ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
@@ -17,6 +46,12 @@ function render() {
   drawSprite( ctx, 'ball', state.ball.x - state.ball.r, state.ball.y - state.ball.r, state.ball.r * 2, state.ball.r * 2 );
 }
 
-loadSpritesheet( () => {
+function loop() {
+  update();
   render();
+  requestAnimationFrame( loop );
+}
+
+loadSpritesheet( () => {
+  loop();
 } );
