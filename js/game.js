@@ -129,6 +129,33 @@ function updateBall() {
     state.lives -= 1;
     resetBallAndPaddle();
   }
+
+  checkBlockCollision();
+}
+
+function checkBlockCollision() {
+  const ball = state.ball;
+
+  for ( const block of state.blocks ) {
+    if ( !block.alive ) continue;
+
+    const blockCenterX = block.x + block.w / 2;
+    const blockCenterY = block.y + block.h / 2;
+    const overlapX = ( ball.r + block.w / 2 ) - Math.abs( ball.x - blockCenterX );
+    const overlapY = ( ball.r + block.h / 2 ) - Math.abs( ball.y - blockCenterY );
+
+    if ( overlapX > 0 && overlapY > 0 ) {
+      if ( overlapX < overlapY ) {
+        ball.vx = -ball.vx;
+      } else {
+        ball.vy = -ball.vy;
+      }
+
+      block.alive = false;
+      state.score += 10;
+      break;
+    }
+  }
 }
 
 function render() {
@@ -141,6 +168,20 @@ function render() {
     if ( !block.alive ) return;
     drawSprite( ctx, `block_${ block.color }`, block.x, block.y, block.w, block.h );
   } );
+
+  renderHud();
+}
+
+function renderHud() {
+  ctx.font = '20px sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textBaseline = 'top';
+
+  ctx.textAlign = 'left';
+  ctx.fillText( `Puntaje: ${ state.score }`, 12, 8 );
+
+  ctx.textAlign = 'right';
+  ctx.fillText( `Vidas: ${ state.lives }`, canvas.width - 12, 8 );
 }
 
 function loop() {
