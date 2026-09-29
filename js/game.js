@@ -65,6 +65,8 @@ document.addEventListener( 'keyup', ( e ) => {
 } );
 
 function update() {
+  if ( state.status !== 'playing' ) return;
+
   if ( keys.left ) state.paddle.x = clampPaddleX( state.paddle.x - PADDLE_SPEED );
   if ( keys.right ) state.paddle.x = clampPaddleX( state.paddle.x + PADDLE_SPEED );
 
@@ -127,10 +129,20 @@ function updateBall() {
   // La bola cae debajo de la paleta: se pierde una vida
   if ( ball.y - ball.r > canvas.height ) {
     state.lives -= 1;
+
+    if ( state.lives <= 0 ) {
+      state.status = 'gameover';
+      return;
+    }
+
     resetBallAndPaddle();
   }
 
   checkBlockCollision();
+
+  if ( state.blocks.every( ( block ) => !block.alive ) ) {
+    state.status = 'win';
+  }
 }
 
 function checkBlockCollision() {
@@ -158,6 +170,32 @@ function checkBlockCollision() {
   }
 }
 
+function resetGame() {
+  state.status = 'playing';
+  state.lives = 3;
+  state.score = 0;
+  state.blocks = createBlocks();
+  resetBallAndPaddle();
+}
+
+const RETRY_BUTTON = { w: 220, h: 56, x: ( canvas.width - 220 ) / 2, y: 360 };
+
+canvas.addEventListener( 'click', ( e ) => {
+  if ( state.status === 'playing' ) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const clickX = ( e.clientX - rect.left ) * scaleX;
+  const clickY = ( e.clientY - rect.top ) * scaleY;
+
+  const withinButton =
+    clickX >= RETRY_BUTTON.x && clickX <= RETRY_BUTTON.x + RETRY_BUTTON.w &&
+    clickY >= RETRY_BUTTON.y && clickY <= RETRY_BUTTON.y + RETRY_BUTTON.h;
+
+  if ( withinButton ) resetGame();
+} );
+
 function render() {
   ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
@@ -170,6 +208,27 @@ function render() {
   } );
 
   renderHud();
+
+  if ( state.status === 'gameover' ) renderOverlay( 'Game Over' );
+  if ( state.status === 'win' ) renderOverlay( '¡Ganaste!' );
+}
+
+function renderOverlay( title ) {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect( 0, 0, canvas.width, canvas.height );
+
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 48px sans-serif';
+  ctx.fillText( title, canvas.width / 2, 270 );
+
+  ctx.fillStyle = '#2ecc71';
+  ctx.fillRect( RETRY_BUTTON.x, RETRY_BUTTON.y, RETRY_BUTTON.w, RETRY_BUTTON.h );
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '24px sans-serif';
+  ctx.fillText( 'Reintentar', canvas.width / 2, RETRY_BUTTON.y + RETRY_BUTTON.h / 2 );
 }
 
 function renderHud() {
