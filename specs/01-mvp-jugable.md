@@ -1,6 +1,6 @@
 # SPEC 01 — MVP jugable de Arkanoid
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** (ninguno)
 > **Date:** 2026-09-29
 > **Objective:** Construir una versión mínima jugable de Arkanoid de punta a punta: paleta controlable por mouse y teclado, bola con rebote físico clásico, un único nivel de bloques 10x6, sistema de vidas, puntaje básico y overlays de victoria/derrota con reintento.
@@ -65,15 +65,15 @@ Convenciones:
 
 ## Acceptance criteria
 
-- [ ] Abrir `index.html` carga el canvas de 800x600 sin errores en consola.
-- [ ] La paleta se mueve tanto con el mouse como con las flechas del teclado.
-- [ ] La bola rebota en paredes y paleta con ángulo dependiente del punto de impacto (extremos de la paleta producen ángulos más cerrados).
-- [ ] Se ven 60 bloques (10 columnas x 6 filas) con colores mezclados por bloque, no organizados en filas de un solo color.
-- [ ] Perder la bola resta una vida y reinicia la posición de bola y paleta.
-- [ ] Al llegar a 0 vidas aparece un overlay de "Game Over" con botón "Reintentar".
-- [ ] Al romper los 60 bloques aparece un overlay de "¡Ganaste!" con botón "Reintentar".
-- [ ] El botón "Reintentar" reinicia el juego completo (vidas, puntaje, bola, paleta, bloques) sin recargar la página.
-- [ ] El puntaje se pierde al recargar el navegador (no se usa localStorage).
+- [x] Abrir `index.html` carga el canvas de 800x600 sin errores en consola.
+- [x] La paleta se mueve tanto con el mouse como con las flechas del teclado.
+- [x] La bola rebota en paredes y paleta con ángulo dependiente del punto de impacto (extremos de la paleta producen ángulos más cerrados).
+- [x] Se ven 60 bloques (10 columnas x 6 filas) con colores mezclados por bloque, no organizados en filas de un solo color.
+- [x] Perder la bola resta una vida y reinicia la posición de bola y paleta.
+- [x] Al llegar a 0 vidas aparece un overlay de "Game Over" con botón "Reintentar".
+- [x] Al romper los 60 bloques aparece un overlay de "¡Ganaste!" con botón "Reintentar".
+- [x] El botón "Reintentar" reinicia el juego completo (vidas, puntaje, bola, paleta, bloques) sin recargar la página.
+- [x] El puntaje se pierde al recargar el navegador (no se usa localStorage).
 
 ## Decisions
 
