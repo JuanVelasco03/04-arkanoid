@@ -2,7 +2,7 @@
 
 > **Status:** Implementado
 > **Depends on:** (ninguno)
-> **Date:** 2026-09-29
+> **Date:** 2026-09-29 (actualizado 2026-09-29)
 > **Objective:** Construir una versión mínima jugable de Arkanoid de punta a punta: paleta controlable por mouse y teclado, bola con rebote físico clásico, un único nivel de bloques 10x6, sistema de vidas, puntaje básico y overlays de victoria/derrota con reintento.
 
 ## Scope
@@ -12,11 +12,12 @@
 - `index.html` en la raíz del repo: canvas de 800x600 px, carga `assets/spritesheet.js` y el/los script(s) del juego.
 - Loop de juego (`requestAnimationFrame`) con física de bola y colisiones.
 - Paleta controlada simultáneamente por mouse (posición horizontal) y teclado (flechas izquierda/derecha).
-- Rebote de la bola estilo clásico: en la paleta, el ángulo de salida depende del punto de impacto (extremos = ángulos más cerrados/agudos respecto al borde); en paredes y bloques, reflexión simple (se invierte la componente de velocidad correspondiente).
-- Un único nivel: grilla de bloques de 10 columnas x 6 filas (60 bloques), con colores asignados bloque a bloque (mezclados), usando los 7 colores disponibles en `SPRITES.blocks`.
+- Rebote de la bola estilo clásico: en la paleta, el ángulo de salida depende del punto de impacto (extremos = ángulos más cerrados/agudos respecto al borde); en paredes y bloques, reflexión simple (se invierte la componente de velocidad correspondiente). Velocidad de lanzamiento reducida (`BALL_LAUNCH_SPEED = 2.5` px/frame por eje) respecto a la versión inicial, para una partida más controlable.
+- Un único nivel: grilla de bloques de 10 columnas x 6 filas (60 bloques), con colores asignados **por fila** (cada fila usa un único color de `SPRITES.blocks`, recorriendo los 7 colores disponibles en orden).
 - Bloques de un solo golpe: al romperse suman 10 puntos.
-- 3 vidas. Si la bola cae debajo de la paleta, se resta una vida y se reinicia la posición de bola y paleta.
-- HUD simple en el canvas mostrando puntaje y vidas actuales.
+- 3 vidas. Si la bola cae debajo de la paleta, se resta una vida, la bola queda pegada al centro de la paleta (`stuck`) y espera un clic para lanzarse.
+- Al iniciar la partida la bola también arranca pegada a la paleta; sigue el movimiento de la paleta hasta el primer clic, que la lanza con la velocidad inicial.
+- HUD estilizado en un panel superior semitransparente con degradado: puntaje mostrado en grande con formato de 4 dígitos (`0000`) y etiqueta "PUNTAJE"; vidas representadas como una fila de iconos de bola (no como número) con etiqueta "VIDAS".
 - Puntaje visible durante la partida, sin persistencia (se pierde al recargar el navegador).
 - Overlay de "Game Over" cuando las vidas llegan a 0, y overlay de "¡Ganaste!" cuando se rompen los 60 bloques. Ambos overlays incluyen un botón "Reintentar" que reinicia el estado del juego sin recargar la página.
 
@@ -35,12 +36,14 @@
 
 ```js
 // Estado global del juego
+const BALL_LAUNCH_SPEED = 2.5;
+
 const state = {
   status: 'playing', // 'playing' | 'gameover' | 'win'
   lives: 3,
   score: 0,
   paddle: { x: 360, y: 570, w: 100, h: 14 },
-  ball: { x: 400, y: 300, vx: 4, vy: -4, r: 8 },
+  ball: { x: 400, y: 300, vx: BALL_LAUNCH_SPEED, vy: -BALL_LAUNCH_SPEED, r: 8, stuck: true },
   blocks: [ /* 60 objetos: { col, row, x, y, w, h, color, alive } */ ],
 };
 ```
@@ -49,7 +52,8 @@ Convenciones:
 
 - Origen de coordenadas: esquina superior izquierda del canvas (800x600 px).
 - Velocidades en píxeles/frame.
-- La grilla de bloques tiene 10 columnas x 6 filas. El color de cada bloque se asigna individualmente (no por fila completa), recorriendo los 7 colores de `SPRITES.blocks` en un patrón mezclado.
+- La grilla de bloques tiene 10 columnas x 6 filas. El color se asigna **por fila completa**: cada fila usa un único color de `SPRITES.blocks` (`row % 7`), no un patrón mezclado bloque a bloque.
+- `ball.stuck` indica si la bola está pegada a la paleta (al iniciar la partida y tras perder una vida); mientras es `true`, la bola sigue la posición de la paleta y no aplica física, hasta que un clic la lanza (`stuck = false`).
 - `status` determina qué overlay se dibuja (`'gameover'` o `'win'`) y si el loop de física sigue actualizando posiciones.
 
 ## Implementation plan
@@ -68,19 +72,24 @@ Convenciones:
 - [x] Abrir `index.html` carga el canvas de 800x600 sin errores en consola.
 - [x] La paleta se mueve tanto con el mouse como con las flechas del teclado.
 - [x] La bola rebota en paredes y paleta con ángulo dependiente del punto de impacto (extremos de la paleta producen ángulos más cerrados).
-- [x] Se ven 60 bloques (10 columnas x 6 filas) con colores mezclados por bloque, no organizados en filas de un solo color.
-- [x] Perder la bola resta una vida y reinicia la posición de bola y paleta.
+- [x] Se ven 60 bloques (10 columnas x 6 filas) organizados en filas de un solo color cada una (un color por fila, no mezclado bloque a bloque).
+- [x] Al iniciar la partida y tras perder una vida, la bola queda pegada al centro de la paleta y sigue su movimiento hasta que un clic la lanza.
+- [x] Perder la bola resta una vida, reinicia la posición de bola y paleta, y la bola queda pegada esperando el clic de lanzamiento.
 - [x] Al llegar a 0 vidas aparece un overlay de "Game Over" con botón "Reintentar".
 - [x] Al romper los 60 bloques aparece un overlay de "¡Ganaste!" con botón "Reintentar".
 - [x] El botón "Reintentar" reinicia el juego completo (vidas, puntaje, bola, paleta, bloques) sin recargar la página.
 - [x] El puntaje se pierde al recargar el navegador (no se usa localStorage).
+- [x] El HUD muestra el puntaje en un panel superior estilizado y las vidas como una fila de iconos de bola (no como número).
 
 ## Decisions
 
 - **Sí:** control simultáneo de mouse y teclado para la paleta. Pedido explícito del usuario.
 - **Sí:** física de rebote estilo clásico (ángulo de salida según punto de impacto en la paleta). Pedido explícito del usuario.
 - **Sí:** bloques de un solo golpe con puntaje uniforme (10 pts). Simplifica el MVP y evita definir una tabla de resistencia/puntaje por color.
-- **Sí:** colores asignados por bloque individual, no por fila completa. Pedido explícito del usuario para evitar franjas de un solo color.
+- **Sí:** colores asignados por fila completa (un color por fila). Decisión revertida a pedido explícito del usuario; la versión original usaba color por bloque individual mezclado, pero se cambió a franjas de color por fila.
+- **Sí:** la bola queda pegada al centro de la paleta al iniciar la partida y tras perder una vida, y se lanza con un clic. Pedido explícito del usuario, en vez del lanzamiento automático de la versión original.
+- **Sí:** velocidad de lanzamiento de la bola reducida (de 4 a 2.5 px/frame por eje). Pedido explícito del usuario porque la velocidad original resultaba demasiado rápida.
+- **Sí:** vidas representadas como iconos de bola en vez de un número, dentro de un HUD con panel superior estilizado (degradado, etiquetas, puntaje en formato de 4 dígitos). Pedido explícito del usuario para mejorar la UI/UX del HUD.
 - **Sí:** overlay simple sobre el mismo canvas para victoria/derrota, en vez de pantallas o rutas separadas. Es más simple de implementar y suficiente para un MVP.
 - **No:** sonidos (`ball-bounce.mp3`, `break-sound.mp3`). Decisión explícita del usuario de no implementarlos en este MVP; queda para un spec futuro.
 - **No:** persistencia de puntaje (localStorage). Decisión explícita del usuario de no guardarlo por ahora.
