@@ -10,6 +10,7 @@ const state = {
   paddle: { x: 360, y: 570, w: 100, h: 14 },
   ball: { x: 400, y: 300, vx: BALL_LAUNCH_SPEED, vy: -BALL_LAUNCH_SPEED, r: 8, stuck: true },
   blocks: [],
+  explosions: [],
 };
 
 const BLOCK_COLS = 10;
@@ -66,7 +67,7 @@ document.addEventListener( 'keyup', ( e ) => {
   if ( e.key === 'ArrowRight' ) keys.right = false;
 } );
 
-function update() {
+function update( timestamp ) {
   if ( state.status !== 'playing' ) return;
 
   if ( keys.left ) state.paddle.x = clampPaddleX( state.paddle.x - PADDLE_SPEED );
@@ -78,7 +79,7 @@ function update() {
     return;
   }
 
-  updateBall();
+  updateBall( timestamp );
 }
 
 const BALL_SPEED = Math.hypot( BALL_LAUNCH_SPEED, BALL_LAUNCH_SPEED );
@@ -99,7 +100,7 @@ function launchBall() {
   state.ball.vy = -BALL_LAUNCH_SPEED;
 }
 
-function updateBall() {
+function updateBall( timestamp ) {
   const ball = state.ball;
   const paddle = state.paddle;
 
@@ -153,14 +154,14 @@ function updateBall() {
     resetBallAndPaddle();
   }
 
-  checkBlockCollision();
+  checkBlockCollision( timestamp );
 
   if ( state.blocks.every( ( block ) => !block.alive ) ) {
     state.status = 'win';
   }
 }
 
-function checkBlockCollision() {
+function checkBlockCollision( timestamp ) {
   const ball = state.ball;
 
   for ( const block of state.blocks ) {
@@ -180,6 +181,14 @@ function checkBlockCollision() {
 
       block.alive = false;
       state.score += 10;
+      state.explosions.push( {
+        x: block.x,
+        y: block.y,
+        w: block.w,
+        h: block.h,
+        color: block.color,
+        startTime: timestamp,
+      } );
       break;
     }
   }
