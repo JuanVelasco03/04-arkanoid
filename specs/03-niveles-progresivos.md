@@ -1,6 +1,6 @@
 # SPEC 03 — Niveles progresivos
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 01
 > **Date:** 2026-09-30
 > **Objective:** Reemplazar el único nivel fijo por 5 niveles definidos como mapas de texto en `js/levels.js`, con velocidad de bola creciente, overlay de "¡Nivel completado!" entre niveles y el nivel actual visible en el HUD.
