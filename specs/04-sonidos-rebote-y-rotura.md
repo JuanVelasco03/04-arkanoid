@@ -1,6 +1,6 @@
 # SPEC 04 — Sonidos de rebote y rotura
 
-> **Status:** Borrador
+> **Status:** Aprobado
 > **Depends on:** SPEC 01
 > **Date:** 2026-09-30
 > **Objective:** Reproducir `ball-bounce.mp3` cuando la bola rebota en una pared o en la paleta y `break-sound.mp3` cuando se rompe un bloque, mediante un módulo `js/audio.js` con pool de audio y un botón de mute en el HUD persistido en `localStorage`.
