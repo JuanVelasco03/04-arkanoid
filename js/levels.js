@@ -8,6 +8,19 @@ const BLOCK_CHARS = {
   v: 'green',
 };
 
+// Color aproximado con el que cada sprite se ve en pantalla. Los nombres del
+// spritesheet no siempre coinciden con el tono real (p. ej. 'green' se dibuja
+// azul), así que las miniaturas del selector usan esta tabla.
+const BLOCK_HEX = {
+  gray:     '#9aa0ad',
+  red:      '#d2344a',
+  yellow:   '#d9bb4a',
+  cyan:     '#4fd1a5',
+  magenta:  '#6b3ff5',
+  hotpink:  '#f07c1e',
+  green:    '#3fa9f5',
+};
+
 const LEVELS = [
   // Nivel 1 — 4 filas completas (40 bloques)
   [

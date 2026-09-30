@@ -5,7 +5,7 @@ const BALL_LAUNCH_SPEED = 2.5;
 const LEVEL_SPEED_FACTOR = 1.1;
 
 const state = {
-  status: 'playing', // 'playing' | 'levelclear' | 'gameover' | 'win'
+  status: 'playing', // 'playing' | 'paused' | 'levelclear' | 'gameover' | 'win'
   level: 1,
   ballSpeed: BALL_LAUNCH_SPEED,
   lives: 3,
@@ -21,7 +21,7 @@ const BLOCK_W = 76;
 const BLOCK_H = 24;
 const BLOCK_GAP = 4;
 const BLOCK_OFFSET_X = ( canvas.width - ( BLOCK_COLS * BLOCK_W + ( BLOCK_COLS - 1 ) * BLOCK_GAP ) ) / 2;
-const BLOCK_OFFSET_TOP = 50;
+const BLOCK_OFFSET_TOP = 10;
 
 function createBlocks( levelIndex ) {
   const blocks = [];
@@ -67,12 +67,18 @@ canvas.addEventListener( 'mousemove', ( e ) => {
 document.addEventListener( 'keydown', ( e ) => {
   if ( e.key === 'ArrowLeft' ) keys.left = true;
   if ( e.key === 'ArrowRight' ) keys.right = true;
+  if ( e.key === 'Escape' || e.key.toLowerCase() === 'p' ) togglePause();
 } );
 
 document.addEventListener( 'keyup', ( e ) => {
   if ( e.key === 'ArrowLeft' ) keys.left = false;
   if ( e.key === 'ArrowRight' ) keys.right = false;
 } );
+
+function togglePause() {
+  if ( state.status === 'playing' ) state.status = 'paused';
+  else if ( state.status === 'paused' ) state.status = 'playing';
+}
 
 function update( timestamp ) {
   if ( state.status !== 'playing' ) return;
@@ -228,40 +234,15 @@ function resetGame() {
   loadLevel( 1 );
 }
 
-const RETRY_BUTTON = { w: 220, h: 56, x: ( canvas.width - 220 ) / 2, y: 360 };
+function startLevel( level ) {
+  state.lives = 3;
+  state.score = 0;
+  loadLevel( level );
+  state.status = 'playing';
+}
 
-canvas.addEventListener( 'click', ( e ) => {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const clickX = ( e.clientX - rect.left ) * scaleX;
-  const clickY = ( e.clientY - rect.top ) * scaleY;
-
-  const withinMuteButton =
-    clickX >= MUTE_BUTTON.x && clickX <= MUTE_BUTTON.x + MUTE_BUTTON.w &&
-    clickY >= MUTE_BUTTON.y && clickY <= MUTE_BUTTON.y + MUTE_BUTTON.h;
-
-  if ( withinMuteButton ) {
-    toggleMute();
-    return;
-  }
-
-  if ( state.status === 'levelclear' ) {
-    loadLevel( state.level + 1 );
-    state.status = 'playing';
-    return;
-  }
-
-  if ( state.status !== 'playing' ) {
-    const withinButton =
-      clickX >= RETRY_BUTTON.x && clickX <= RETRY_BUTTON.x + RETRY_BUTTON.w &&
-      clickY >= RETRY_BUTTON.y && clickY <= RETRY_BUTTON.y + RETRY_BUTTON.h;
-
-    if ( withinButton ) resetGame();
-    return;
-  }
-
-  if ( state.ball.stuck ) launchBall();
+canvas.addEventListener( 'click', () => {
+  if ( state.status === 'playing' && state.ball.stuck ) launchBall();
 } );
 
 function render( timestamp ) {
@@ -284,130 +265,196 @@ function render( timestamp ) {
     drawFrame( ctx, frames[ frameIndex ], explosion.x, explosion.y, explosion.w, explosion.h );
   } );
 
-  renderHud();
-
-  if ( state.status === 'gameover' ) renderOverlay( 'Game Over' );
-  if ( state.status === 'win' ) renderOverlay( '¡Ganaste!' );
-  if ( state.status === 'levelclear' ) renderLevelClearOverlay();
+  syncUi();
 }
 
-function renderLevelClearOverlay() {
-  ctx.save();
+/* ---------- Interfaz (DOM) ---------- */
 
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-  ctx.fillRect( 0, 0, canvas.width, canvas.height );
+const ICONS = {
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+  play:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l11-6.5a1 1 0 0 0 0-1.8l-11-6.5A1 1 0 0 0 8 5.5Z"/></svg>',
+  sound: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+  muted: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor"/><path d="m16 9 5 6M21 9l-5 6"/></svg>',
+};
 
-  ctx.fillStyle = '#fff';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = 'bold 48px sans-serif';
-  ctx.fillText( '¡Nivel completado!', canvas.width / 2, 270 );
+const cabinetEl = document.getElementById( 'cabinet' );
+const hudScoreEl = document.getElementById( 'hudScore' );
+const hudLevelEl = document.getElementById( 'hudLevel' );
+const hudLivesEl = document.getElementById( 'hudLives' );
+const muteBtn = document.getElementById( 'muteBtn' );
+const pauseBtn = document.getElementById( 'pauseBtn' );
+const levelButtonsEl = document.getElementById( 'levelButtons' );
+const overlayEl = document.getElementById( 'overlay' );
+const overlayEyebrowEl = document.getElementById( 'overlayEyebrow' );
+const overlayTitleEl = document.getElementById( 'overlayTitle' );
+const overlayBtn = document.getElementById( 'overlayBtn' );
 
-  ctx.font = '24px sans-serif';
-  ctx.fillText( `Nivel ${ state.level + 1 }`, canvas.width / 2, 326 );
+// Color que representa a cada nivel: el tono de bloque más frecuente en su mapa.
+// En empates gana el color cromático, porque el gris es un acento apagado.
+function dominantColor( levelIndex ) {
+  const tally = {};
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-  ctx.font = '18px sans-serif';
-  ctx.fillText( 'Clic para continuar', canvas.width / 2, 362 );
+  LEVELS[ levelIndex ].forEach( ( rowStr ) => {
+    [ ...rowStr ].forEach( ( char ) => {
+      const color = BLOCK_CHARS[ char ];
+      if ( color ) tally[ color ] = ( tally[ color ] || 0 ) + 1;
+    } );
+  } );
 
-  ctx.restore();
+  const winner = Object.keys( tally ).sort( ( a, b ) =>
+    ( tally[ b ] - tally[ a ] ) || ( ( a === 'gray' ) - ( b === 'gray' ) )
+  )[ 0 ];
+
+  return BLOCK_HEX[ winner ];
 }
 
-function renderOverlay( title ) {
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-  ctx.fillRect( 0, 0, canvas.width, canvas.height );
+const LEVEL_ACCENTS = LEVELS.map( ( _, index ) => dominantColor( index ) );
 
-  ctx.fillStyle = '#fff';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = 'bold 48px sans-serif';
-  ctx.fillText( title, canvas.width / 2, 270 );
+// Cada nivel se dibuja como una miniatura de su mapa real. Guardamos las celdas
+// por "fila-columna" para poder apagarlas conforme se rompen los bloques.
+const levelChips = LEVELS.map( ( map, index ) => {
+  const level = index + 1;
+  const accent = LEVEL_ACCENTS[ index ];
 
-  ctx.fillStyle = '#2ecc71';
-  ctx.fillRect( RETRY_BUTTON.x, RETRY_BUTTON.y, RETRY_BUTTON.w, RETRY_BUTTON.h );
+  const chip = document.createElement( 'button' );
+  chip.className = 'chip';
+  chip.style.setProperty( '--chip-accent', accent );
+  chip.setAttribute( 'aria-label', `Jugar nivel ${ level }` );
 
-  ctx.fillStyle = '#fff';
-  ctx.font = '24px sans-serif';
-  ctx.fillText( 'Reintentar', canvas.width / 2, RETRY_BUTTON.y + RETRY_BUTTON.h / 2 );
+  const num = document.createElement( 'span' );
+  num.className = 'chip__num';
+  num.textContent = String( level ).padStart( 2, '0' );
+  chip.appendChild( num );
+
+  const mapEl = document.createElement( 'span' );
+  mapEl.className = 'chip__map';
+  chip.appendChild( mapEl );
+
+  const cells = new Map();
+
+  map.forEach( ( rowStr, row ) => {
+    [ ...rowStr ].forEach( ( char, col ) => {
+      const cell = document.createElement( 'span' );
+      const color = BLOCK_CHARS[ char ];
+
+      cell.className = color ? 'cell' : 'cell is-void';
+      if ( color ) {
+        cell.style.setProperty( '--cell', BLOCK_HEX[ color ] );
+        cells.set( `${ row }-${ col }`, cell );
+      }
+
+      mapEl.appendChild( cell );
+    } );
+  } );
+
+  chip.addEventListener( 'click', () => {
+    startLevel( level );
+    chip.blur(); // devuelve el teclado al juego
+  } );
+
+  levelButtonsEl.appendChild( chip );
+
+  return { chip, cells };
+} );
+
+muteBtn.addEventListener( 'click', () => {
+  toggleMute();
+  muteBtn.blur();
+} );
+
+pauseBtn.addEventListener( 'click', () => {
+  togglePause();
+  pauseBtn.blur();
+} );
+
+const OVERLAYS = {
+  paused:     { eyebrow: () => `Nivel ${ state.level }`, title: 'Pausa',            action: 'Continuar' },
+  levelclear: { eyebrow: () => 'Completado',             title: '¡Nivel superado!', action: 'Siguiente nivel' },
+  gameover:   { eyebrow: () => `Nivel ${ state.level }`, title: 'Game over',        action: 'Reintentar' },
+  win:        { eyebrow: () => 'Todos los niveles',      title: '¡Ganaste!',        action: 'Jugar de nuevo' },
+};
+
+overlayBtn.addEventListener( 'click', () => {
+  if ( state.status === 'paused' ) togglePause();
+  else if ( state.status === 'levelclear' ) startNextLevel();
+  else resetGame();
+
+  overlayBtn.blur();
+} );
+
+function startNextLevel() {
+  loadLevel( state.level + 1 );
+  state.status = 'playing';
 }
 
-const HUD_HEIGHT = 46;
-const MUTE_BUTTON = { w: 24, h: 24, x: canvas.width - 132, y: 11 };
+let shownLives = -1;
+let shownStatus = null;
+let shownLevel = -1;
+let shownAlive = -1;
+let shownMuted = null;
 
-function renderHud() {
-  ctx.save();
+function syncUi() {
+  hudScoreEl.textContent = String( state.score ).padStart( 4, '0' );
 
-  const gradient = ctx.createLinearGradient( 0, 0, 0, HUD_HEIGHT );
-  gradient.addColorStop( 0, 'rgba(18, 18, 28, 0.9)' );
-  gradient.addColorStop( 1, 'rgba(18, 18, 28, 0.5)' );
-  ctx.fillStyle = gradient;
-  ctx.fillRect( 0, 0, canvas.width, HUD_HEIGHT );
+  if ( shownLevel !== state.level ) {
+    hudLevelEl.textContent = String( state.level );
+    cabinetEl.style.setProperty( '--accent', LEVEL_ACCENTS[ state.level - 1 ] );
 
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo( 0, HUD_HEIGHT - 0.5 );
-  ctx.lineTo( canvas.width, HUD_HEIGHT - 0.5 );
-  ctx.stroke();
+    levelChips.forEach( ( { chip }, index ) => {
+      chip.classList.toggle( 'is-active', index + 1 === state.level );
+    } );
 
-  // Puntaje
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-  ctx.font = '600 11px sans-serif';
-  ctx.fillText( 'PUNTAJE', 16, 7 );
-
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.fillText( String( state.score ).padStart( 4, '0' ), 16, 19 );
-
-  // Nivel
-  ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-  ctx.font = '600 11px sans-serif';
-  ctx.fillText( 'NIVEL', canvas.width / 2, 7 );
-
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.fillText( String( state.level ), canvas.width / 2, 19 );
-
-  // Vidas
-  ctx.textAlign = 'right';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-  ctx.font = '600 11px sans-serif';
-  ctx.fillText( 'VIDAS', canvas.width - 16, 7 );
-
-  const iconSize = 16;
-  const iconGap = 8;
-  const iconsY = 26;
-  const totalWidth = state.lives * iconSize + Math.max( 0, state.lives - 1 ) * iconGap;
-  let iconX = canvas.width - 16 - totalWidth;
-
-  for ( let i = 0; i < state.lives; i++ ) {
-    drawSprite( ctx, 'ball', iconX, iconsY, iconSize, iconSize );
-    iconX += iconSize + iconGap;
+    shownLevel = state.level;
+    shownAlive = -1; // fuerza el repintado de la miniatura activa
   }
 
-  // Mute
-  const muteCenterX = MUTE_BUTTON.x + MUTE_BUTTON.w / 2;
-  const muteCenterY = MUTE_BUTTON.y + MUTE_BUTTON.h / 2;
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#fff';
-  ctx.font = '20px sans-serif';
-  ctx.fillText( '♪', muteCenterX, muteCenterY );
-
-  if ( isMuted() ) {
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo( MUTE_BUTTON.x + 3, MUTE_BUTTON.y + MUTE_BUTTON.h - 3 );
-    ctx.lineTo( MUTE_BUTTON.x + MUTE_BUTTON.w - 3, MUTE_BUTTON.y + 3 );
-    ctx.stroke();
+  if ( shownLives !== state.lives ) {
+    hudLivesEl.replaceChildren(
+      ...Array.from( { length: state.lives }, () => {
+        const life = document.createElement( 'span' );
+        life.className = 'life';
+        return life;
+      } )
+    );
+    shownLives = state.lives;
   }
 
-  ctx.restore();
+  const aliveCount = state.blocks.reduce( ( total, block ) => total + ( block.alive ? 1 : 0 ), 0 );
+
+  if ( shownAlive !== aliveCount ) {
+    const { cells } = levelChips[ state.level - 1 ];
+
+    state.blocks.forEach( ( block ) => {
+      const cell = cells.get( `${ block.row }-${ block.col }` );
+      if ( cell ) cell.classList.toggle( 'is-broken', !block.alive );
+    } );
+
+    shownAlive = aliveCount;
+  }
+
+  if ( shownMuted !== isMuted() ) {
+    muteBtn.innerHTML = isMuted() ? ICONS.muted : ICONS.sound;
+    muteBtn.setAttribute( 'aria-label', isMuted() ? 'Activar sonido' : 'Silenciar' );
+    muteBtn.setAttribute( 'aria-pressed', String( isMuted() ) );
+    shownMuted = isMuted();
+  }
+
+  if ( shownStatus !== state.status ) {
+    const paused = state.status === 'paused';
+    pauseBtn.innerHTML = paused ? ICONS.play : ICONS.pause;
+    pauseBtn.setAttribute( 'aria-label', paused ? 'Reanudar' : 'Pausar' );
+
+    const overlay = OVERLAYS[ state.status ];
+
+    if ( overlay ) {
+      overlayEyebrowEl.textContent = overlay.eyebrow();
+      overlayTitleEl.textContent = overlay.title;
+      overlayBtn.textContent = overlay.action;
+    }
+
+    overlayEl.classList.toggle( 'is-open', Boolean( overlay ) );
+    shownStatus = state.status;
+  }
 }
 
 function loop( timestamp ) {
