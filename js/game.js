@@ -2,9 +2,12 @@ const canvas = document.getElementById( 'game' );
 const ctx = canvas.getContext( '2d' );
 
 const BALL_LAUNCH_SPEED = 2.5;
+const LEVEL_SPEED_FACTOR = 1.1;
 
 const state = {
-  status: 'playing', // 'playing' | 'gameover' | 'win'
+  status: 'playing', // 'playing' | 'levelclear' | 'gameover' | 'win'
+  level: 1,
+  ballSpeed: BALL_LAUNCH_SPEED,
   lives: 3,
   score: 0,
   paddle: { x: 360, y: 570, w: 100, h: 14 },
@@ -14,18 +17,21 @@ const state = {
 };
 
 const BLOCK_COLS = 10;
-const BLOCK_ROWS = 6;
 const BLOCK_W = 76;
 const BLOCK_H = 24;
 const BLOCK_GAP = 4;
 const BLOCK_OFFSET_X = ( canvas.width - ( BLOCK_COLS * BLOCK_W + ( BLOCK_COLS - 1 ) * BLOCK_GAP ) ) / 2;
 const BLOCK_OFFSET_TOP = 50;
-const BLOCK_COLORS = Object.keys( SPRITES.blocks );
 
-function createBlocks() {
+function createBlocks( levelIndex ) {
   const blocks = [];
-  for ( let row = 0; row < BLOCK_ROWS; row++ ) {
-    for ( let col = 0; col < BLOCK_COLS; col++ ) {
+  const map = LEVELS[ levelIndex ];
+
+  map.forEach( ( rowStr, row ) => {
+    [ ...rowStr ].forEach( ( char, col ) => {
+      const color = BLOCK_CHARS[ char ];
+      if ( !color ) return;
+
       blocks.push( {
         col,
         row,
@@ -33,15 +39,16 @@ function createBlocks() {
         y: BLOCK_OFFSET_TOP + row * ( BLOCK_H + BLOCK_GAP ),
         w: BLOCK_W,
         h: BLOCK_H,
-        color: BLOCK_COLORS[ row % BLOCK_COLORS.length ],
+        color,
         alive: true,
       } );
-    }
-  }
+    } );
+  } );
+
   return blocks;
 }
 
-state.blocks = createBlocks();
+state.blocks = createBlocks( 0 );
 
 const PADDLE_SPEED = 7;
 const keys = { left: false, right: false };
@@ -86,22 +93,33 @@ function update( timestamp ) {
   updateBall( timestamp );
 }
 
-const BALL_SPEED = Math.hypot( BALL_LAUNCH_SPEED, BALL_LAUNCH_SPEED );
 const MAX_BOUNCE_ANGLE = Math.PI / 3; // 60°, evita trayectorias casi horizontales
+
+function applyLevelSpeed() {
+  state.ballSpeed = BALL_LAUNCH_SPEED * Math.pow( LEVEL_SPEED_FACTOR, state.level - 1 );
+}
 
 function resetBallAndPaddle() {
   state.paddle.x = 360;
   state.ball.x = state.paddle.x + state.paddle.w / 2;
   state.ball.y = state.paddle.y - state.ball.r;
-  state.ball.vx = BALL_LAUNCH_SPEED;
-  state.ball.vy = -BALL_LAUNCH_SPEED;
+  state.ball.vx = state.ballSpeed;
+  state.ball.vy = -state.ballSpeed;
   state.ball.stuck = true;
+}
+
+function loadLevel( level ) {
+  state.level = level;
+  state.blocks = createBlocks( level - 1 );
+  state.explosions = [];
+  applyLevelSpeed();
+  resetBallAndPaddle();
 }
 
 function launchBall() {
   state.ball.stuck = false;
-  state.ball.vx = BALL_LAUNCH_SPEED;
-  state.ball.vy = -BALL_LAUNCH_SPEED;
+  state.ball.vx = state.ballSpeed;
+  state.ball.vy = -state.ballSpeed;
 }
 
 function updateBall( timestamp ) {
@@ -142,8 +160,9 @@ function updateBall( timestamp ) {
     const clampedRelative = Math.max( -1, Math.min( 1, relativeIntersect ) );
     const bounceAngle = clampedRelative * MAX_BOUNCE_ANGLE;
 
-    ball.vx = BALL_SPEED * Math.sin( bounceAngle );
-    ball.vy = -BALL_SPEED * Math.cos( bounceAngle );
+    const ballSpeedMagnitude = Math.hypot( state.ballSpeed, state.ballSpeed );
+    ball.vx = ballSpeedMagnitude * Math.sin( bounceAngle );
+    ball.vy = -ballSpeedMagnitude * Math.cos( bounceAngle );
   }
 
   // La bola cae debajo de la paleta: se pierde una vida
@@ -161,7 +180,7 @@ function updateBall( timestamp ) {
   checkBlockCollision( timestamp );
 
   if ( state.blocks.every( ( block ) => !block.alive ) ) {
-    state.status = 'win';
+    state.status = state.level < LEVELS.length ? 'levelclear' : 'win';
   }
 }
 
@@ -202,13 +221,18 @@ function resetGame() {
   state.status = 'playing';
   state.lives = 3;
   state.score = 0;
-  state.blocks = createBlocks();
-  resetBallAndPaddle();
+  loadLevel( 1 );
 }
 
 const RETRY_BUTTON = { w: 220, h: 56, x: ( canvas.width - 220 ) / 2, y: 360 };
 
 canvas.addEventListener( 'click', ( e ) => {
+  if ( state.status === 'levelclear' ) {
+    loadLevel( state.level + 1 );
+    state.status = 'playing';
+    return;
+  }
+
   if ( state.status !== 'playing' ) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -239,15 +263,41 @@ function render( timestamp ) {
   } );
 
   state.explosions.forEach( ( explosion ) => {
-    const frameIndex = Math.floor( ( timestamp - explosion.startTime ) / ( EXPLOSION_DURATION / 4 ) );
-    const frame = EXPLOSION_FRAMES[ explosion.color ][ frameIndex ];
-    drawFrame( ctx, frame, explosion.x, explosion.y, explosion.w, explosion.h );
+    const frames = EXPLOSION_FRAMES[ explosion.color ];
+    const frameIndex = Math.min(
+      frames.length - 1,
+      Math.floor( ( timestamp - explosion.startTime ) / ( EXPLOSION_DURATION / 4 ) )
+    );
+    drawFrame( ctx, frames[ frameIndex ], explosion.x, explosion.y, explosion.w, explosion.h );
   } );
 
   renderHud();
 
   if ( state.status === 'gameover' ) renderOverlay( 'Game Over' );
   if ( state.status === 'win' ) renderOverlay( '¡Ganaste!' );
+  if ( state.status === 'levelclear' ) renderLevelClearOverlay();
+}
+
+function renderLevelClearOverlay() {
+  ctx.save();
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect( 0, 0, canvas.width, canvas.height );
+
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 48px sans-serif';
+  ctx.fillText( '¡Nivel completado!', canvas.width / 2, 270 );
+
+  ctx.font = '24px sans-serif';
+  ctx.fillText( `Nivel ${ state.level + 1 }`, canvas.width / 2, 326 );
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+  ctx.font = '18px sans-serif';
+  ctx.fillText( 'Clic para continuar', canvas.width / 2, 362 );
+
+  ctx.restore();
 }
 
 function renderOverlay( title ) {
@@ -296,6 +346,16 @@ function renderHud() {
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 22px sans-serif';
   ctx.fillText( String( state.score ).padStart( 4, '0' ), 16, 19 );
+
+  // Nivel
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.font = '600 11px sans-serif';
+  ctx.fillText( 'NIVEL', canvas.width / 2, 7 );
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.fillText( String( state.level ), canvas.width / 2, 19 );
 
   // Vidas
   ctx.textAlign = 'right';

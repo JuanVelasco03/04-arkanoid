@@ -1,6 +1,6 @@
 # SPEC 03 — Niveles progresivos
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 01
 > **Date:** 2026-09-30
 > **Objective:** Reemplazar el único nivel fijo por 5 niveles definidos como mapas de texto en `js/levels.js`, con velocidad de bola creciente, overlay de "¡Nivel completado!" entre niveles y el nivel actual visible en el HUD.
@@ -126,19 +126,19 @@ Convenciones:
 
 ## Acceptance criteria
 
-- [ ] `js/levels.js` existe, se carga desde `index.html` y expone `BLOCK_CHARS` y `LEVELS` con exactamente 5 niveles.
-- [ ] Cada nivel de `LEVELS` tiene filas de exactamente 10 caracteres y como máximo 6 filas.
-- [ ] Al cargar el juego se ve el layout del nivel 1 (4 filas completas, 40 bloques), no la grilla de 60 bloques del SPEC 01.
-- [ ] Los caracteres `'.'` del mapa no generan bloque: en los niveles 2, 3 y 4 se ven huecos visibles en la grilla.
-- [ ] Cada carácter del mapa se dibuja con el color correcto de `SPRITES.blocks` según `BLOCK_CHARS` (`r` rojo, `c` cian, `v` verde, etc.).
-- [ ] Romper todos los bloques de un nivel que no es el 5 muestra el overlay "¡Nivel completado!" con el número del nivel siguiente, y la bola deja de moverse.
-- [ ] Un clic durante el overlay de nivel completado carga el nivel siguiente con la bola pegada a la paleta, conservando el puntaje y las vidas que tenía el jugador.
-- [ ] Romper todos los bloques del nivel 5 muestra el overlay "¡Ganaste!" con botón "Reintentar".
-- [ ] La bola es medible y perceptiblemente más rápida en cada nivel: `state.ballSpeed` del nivel 1 es 2.5 y el del nivel 5 es 2.5 × 1.1⁴ ≈ 3.66.
-- [ ] El HUD muestra al centro la etiqueta "NIVEL" y el número de nivel actual, y el número se actualiza al avanzar de nivel.
-- [ ] Perder las 3 vidas en cualquier nivel muestra "Game Over"; el botón "Reintentar" reinicia en el nivel 1 con puntaje 0 y 3 vidas.
-- [ ] Las explosiones del SPEC 02 siguen funcionando en todos los niveles y no queda ninguna dibujada al cambiar de nivel.
-- [ ] No hay errores en consola durante una partida completa del nivel 1 al 5.
+- [x] `js/levels.js` existe, se carga desde `index.html` y expone `BLOCK_CHARS` y `LEVELS` con exactamente 5 niveles.
+- [x] Cada nivel de `LEVELS` tiene filas de exactamente 10 caracteres y como máximo 6 filas.
+- [x] Al cargar el juego se ve el layout del nivel 1 (4 filas completas, 40 bloques), no la grilla de 60 bloques del SPEC 01.
+- [x] Los caracteres `'.'` del mapa no generan bloque: en los niveles 2, 3 y 4 se ven huecos visibles en la grilla.
+- [x] Cada carácter del mapa se dibuja con el color correcto de `SPRITES.blocks` según `BLOCK_CHARS` (`r` rojo, `c` cian, `v` verde, etc.).
+- [x] Romper todos los bloques de un nivel que no es el 5 muestra el overlay "¡Nivel completado!" con el número del nivel siguiente, y la bola deja de moverse.
+- [x] Un clic durante el overlay de nivel completado carga el nivel siguiente con la bola pegada a la paleta, conservando el puntaje y las vidas que tenía el jugador.
+- [x] Romper todos los bloques del nivel 5 muestra el overlay "¡Ganaste!" con botón "Reintentar".
+- [x] La bola es medible y perceptiblemente más rápida en cada nivel: `state.ballSpeed` del nivel 1 es 2.5 y el del nivel 5 es 2.5 × 1.1⁴ ≈ 3.66.
+- [x] El HUD muestra al centro la etiqueta "NIVEL" y el número de nivel actual, y el número se actualiza al avanzar de nivel.
+- [x] Perder las 3 vidas en cualquier nivel muestra "Game Over"; el botón "Reintentar" reinicia en el nivel 1 con puntaje 0 y 3 vidas.
+- [x] Las explosiones del SPEC 02 siguen funcionando en todos los niveles y no queda ninguna dibujada al cambiar de nivel.
+- [x] No hay errores en consola durante una partida completa del nivel 1 al 5.
 
 ## Decisions
 
