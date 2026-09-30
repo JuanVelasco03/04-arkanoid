@@ -115,15 +115,18 @@ function updateBall( timestamp ) {
   if ( ball.x - ball.r <= 0 ) {
     ball.x = ball.r;
     ball.vx = Math.abs( ball.vx );
+    playSound( 'bounce' );
   } else if ( ball.x + ball.r >= canvas.width ) {
     ball.x = canvas.width - ball.r;
     ball.vx = -Math.abs( ball.vx );
+    playSound( 'bounce' );
   }
 
   // Pared superior
   if ( ball.y - ball.r <= 0 ) {
     ball.y = ball.r;
     ball.vy = Math.abs( ball.vy );
+    playSound( 'bounce' );
   }
 
   // Colisión con la paleta
@@ -144,6 +147,7 @@ function updateBall( timestamp ) {
 
     ball.vx = BALL_SPEED * Math.sin( bounceAngle );
     ball.vy = -BALL_SPEED * Math.cos( bounceAngle );
+    playSound( 'bounce' );
   }
 
   // La bola cae debajo de la paleta: se pierde una vida
@@ -184,6 +188,7 @@ function checkBlockCollision( timestamp ) {
       }
 
       block.alive = false;
+      playSound( 'break' );
       state.score += 10;
       state.explosions.push( {
         x: block.x,
@@ -209,13 +214,22 @@ function resetGame() {
 const RETRY_BUTTON = { w: 220, h: 56, x: ( canvas.width - 220 ) / 2, y: 360 };
 
 canvas.addEventListener( 'click', ( e ) => {
-  if ( state.status !== 'playing' ) {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const clickX = ( e.clientX - rect.left ) * scaleX;
-    const clickY = ( e.clientY - rect.top ) * scaleY;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const clickX = ( e.clientX - rect.left ) * scaleX;
+  const clickY = ( e.clientY - rect.top ) * scaleY;
 
+  const withinMuteButton =
+    clickX >= MUTE_BUTTON.x && clickX <= MUTE_BUTTON.x + MUTE_BUTTON.w &&
+    clickY >= MUTE_BUTTON.y && clickY <= MUTE_BUTTON.y + MUTE_BUTTON.h;
+
+  if ( withinMuteButton ) {
+    toggleMute();
+    return;
+  }
+
+  if ( state.status !== 'playing' ) {
     const withinButton =
       clickX >= RETRY_BUTTON.x && clickX <= RETRY_BUTTON.x + RETRY_BUTTON.w &&
       clickY >= RETRY_BUTTON.y && clickY <= RETRY_BUTTON.y + RETRY_BUTTON.h;
@@ -269,6 +283,7 @@ function renderOverlay( title ) {
 }
 
 const HUD_HEIGHT = 46;
+const MUTE_BUTTON = { w: 24, h: 24, x: canvas.width - 132, y: 11 };
 
 function renderHud() {
   ctx.save();
@@ -312,6 +327,25 @@ function renderHud() {
   for ( let i = 0; i < state.lives; i++ ) {
     drawSprite( ctx, 'ball', iconX, iconsY, iconSize, iconSize );
     iconX += iconSize + iconGap;
+  }
+
+  // Mute
+  const muteCenterX = MUTE_BUTTON.x + MUTE_BUTTON.w / 2;
+  const muteCenterY = MUTE_BUTTON.y + MUTE_BUTTON.h / 2;
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff';
+  ctx.font = '20px sans-serif';
+  ctx.fillText( '♪', muteCenterX, muteCenterY );
+
+  if ( isMuted() ) {
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo( MUTE_BUTTON.x + 3, MUTE_BUTTON.y + MUTE_BUTTON.h - 3 );
+    ctx.lineTo( MUTE_BUTTON.x + MUTE_BUTTON.w - 3, MUTE_BUTTON.y + 3 );
+    ctx.stroke();
   }
 
   ctx.restore();
