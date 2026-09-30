@@ -70,18 +70,18 @@ const MUTE_BUTTON = { w: 24, h: 24, x: /* a la izquierda del grupo VIDAS */, y: 
 
 ## Acceptance criteria
 
-- [ ] `js/audio.js` existe, se carga desde `index.html` y expone `playSound`, `isMuted` y `toggleMute`.
-- [ ] La bola rebotando en la pared izquierda, la pared derecha o la pared superior reproduce `ball-bounce.mp3`.
-- [ ] La bola rebotando en la paleta reproduce `ball-bounce.mp3`.
-- [ ] Romper un bloque reproduce `break-sound.mp3` y **no** reproduce `ball-bounce.mp3`.
-- [ ] Dos rebotes en menos de la duración del mp3 se escuchan solapados, sin que el segundo corte al primero.
-- [ ] El HUD muestra un botón de mute en la zona derecha del panel, a la izquierda de los iconos de vidas.
-- [ ] Un clic en el botón de mute silencia todos los sonidos y cambia el icono a la nota tachada; otro clic los reactiva.
-- [ ] Un clic en el botón de mute con la bola pegada a la paleta no lanza la bola.
-- [ ] Un clic en el botón de mute con el overlay de Game Over visible alterna el mute y no dispara el botón "Reintentar".
-- [ ] Mutear, recargar la página y volver a jugar mantiene el juego en silencio (`localStorage.getItem('arkanoid:muted') === 'true'`).
-- [ ] Con `localStorage` bloqueado (ventana privada con almacenamiento deshabilitado), el juego carga, suena y el mute funciona durante la sesión sin errores en consola.
-- [ ] No hay errores ni promesas rechazadas sin capturar en consola durante una partida normal.
+- [x] `js/audio.js` existe, se carga desde `index.html` y expone `playSound`, `isMuted` y `toggleMute`.
+- [x] La bola rebotando en la pared izquierda, la pared derecha o la pared superior reproduce `ball-bounce.mp3`.
+- [x] La bola rebotando en la paleta reproduce `ball-bounce.mp3`.
+- [x] Romper un bloque reproduce `break-sound.mp3` y **no** reproduce `ball-bounce.mp3`.
+- [x] Dos rebotes en menos de la duración del mp3 se escuchan solapados, sin que el segundo corte al primero.
+- [x] El HUD muestra un botón de mute en la zona derecha del panel, a la izquierda de los iconos de vidas.
+- [x] Un clic en el botón de mute silencia todos los sonidos y cambia el icono a la nota tachada; otro clic los reactiva.
+- [x] Un clic en el botón de mute con la bola pegada a la paleta no lanza la bola.
+- [x] Un clic en el botón de mute con el overlay de Game Over visible alterna el mute y no dispara el botón "Reintentar".
+- [x] Mutear, recargar la página y volver a jugar mantiene el juego en silencio (`localStorage.getItem('arkanoid:muted') === 'true'`).
+- [x] Con `localStorage` bloqueado (ventana privada con almacenamiento deshabilitado), el juego carga, suena y el mute funciona durante la sesión sin errores en consola.
+- [x] No hay errores ni promesas rechazadas sin capturar en consola durante una partida normal.
 
 ## Decisions
 
