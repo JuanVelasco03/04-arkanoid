@@ -1,6 +1,6 @@
 # SPEC 02 — Destrucción de bloques con animación
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 01
 > **Date:** 2026-09-30
 > **Objective:** Al romperse un bloque, mostrar una animación de explosión de 4 frames (usando `EXPLOSION_FRAMES` del color del bloque) en su posición, en vez de que el bloque simplemente desaparezca.
@@ -46,12 +46,12 @@ Convenciones:
 
 ## Acceptance criteria
 
-- [ ] Al romper un bloque, aparece una animación de explosión de 4 frames en la posición exacta del bloque destruido.
-- [ ] La explosión usa los frames de `EXPLOSION_FRAMES` correspondientes al color del bloque roto (un bloque rojo explota con los frames de `red`, uno cian con los de `cyan`, etc.).
-- [ ] La animación dura `EXPLOSION_DURATION` (150ms) en total y luego desaparece por completo, sin dejar ningún frame residual dibujado.
-- [ ] El bloque deja de bloquear la bola y el puntaje se suma de forma inmediata al golpearlo, sin esperar a que la animación termine.
-- [ ] Romper varios bloques en sucesión rápida (por ejemplo, dos bloques en menos de 150ms) muestra varias explosiones animándose en paralelo, cada una en su propia posición y con su propio color, sin que se pisen o interfieran entre sí.
-- [ ] El juego no muestra errores en consola durante una partida normal con explosiones activas.
+- [x] Al romper un bloque, aparece una animación de explosión de 4 frames en la posición exacta del bloque destruido.
+- [x] La explosión usa los frames de `EXPLOSION_FRAMES` correspondientes al color del bloque roto (un bloque rojo explota con los frames de `red`, uno cian con los de `cyan`, etc.).
+- [x] La animación dura `EXPLOSION_DURATION` (150ms) en total y luego desaparece por completo, sin dejar ningún frame residual dibujado.
+- [x] El bloque deja de bloquear la bola y el puntaje se suma de forma inmediata al golpearlo, sin esperar a que la animación termine.
+- [x] Romper varios bloques en sucesión rápida (por ejemplo, dos bloques en menos de 150ms) muestra varias explosiones animándose en paralelo, cada una en su propia posición y con su propio color, sin que se pisen o interfieran entre sí.
+- [x] El juego no muestra errores en consola durante una partida normal con explosiones activas.
 
 ## Decisions
 
