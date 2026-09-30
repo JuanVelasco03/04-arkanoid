@@ -1,6 +1,6 @@
 # SPEC 02 — Destrucción de bloques con animación
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** SPEC 01
 > **Date:** 2026-09-30
 > **Objective:** Al romperse un bloque, mostrar una animación de explosión de 4 frames (usando `EXPLOSION_FRAMES` del color del bloque) en su posición, en vez de que el bloque simplemente desaparezca.
