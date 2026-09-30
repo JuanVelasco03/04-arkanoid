@@ -73,6 +73,10 @@ function update( timestamp ) {
   if ( keys.left ) state.paddle.x = clampPaddleX( state.paddle.x - PADDLE_SPEED );
   if ( keys.right ) state.paddle.x = clampPaddleX( state.paddle.x + PADDLE_SPEED );
 
+  state.explosions = state.explosions.filter(
+    ( explosion ) => ( timestamp - explosion.startTime ) < EXPLOSION_DURATION
+  );
+
   if ( state.ball.stuck ) {
     state.ball.x = state.paddle.x + state.paddle.w / 2;
     state.ball.y = state.paddle.y - state.ball.r;
@@ -223,7 +227,7 @@ canvas.addEventListener( 'click', ( e ) => {
   if ( state.ball.stuck ) launchBall();
 } );
 
-function render() {
+function render( timestamp ) {
   ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
   drawSprite( ctx, 'paddle', state.paddle.x, state.paddle.y, state.paddle.w, state.paddle.h );
@@ -232,6 +236,12 @@ function render() {
   state.blocks.forEach( ( block ) => {
     if ( !block.alive ) return;
     drawSprite( ctx, `block_${ block.color }`, block.x, block.y, block.w, block.h );
+  } );
+
+  state.explosions.forEach( ( explosion ) => {
+    const frameIndex = Math.floor( ( timestamp - explosion.startTime ) / ( EXPLOSION_DURATION / 4 ) );
+    const frame = EXPLOSION_FRAMES[ explosion.color ][ frameIndex ];
+    drawFrame( ctx, frame, explosion.x, explosion.y, explosion.w, explosion.h );
   } );
 
   renderHud();
@@ -307,12 +317,12 @@ function renderHud() {
   ctx.restore();
 }
 
-function loop() {
-  update();
-  render();
+function loop( timestamp ) {
+  update( timestamp );
+  render( timestamp );
   requestAnimationFrame( loop );
 }
 
 loadSpritesheet( () => {
-  loop();
+  requestAnimationFrame( loop );
 } );
